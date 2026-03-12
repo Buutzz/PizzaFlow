@@ -1,0 +1,1 @@
+* * * * * /usr/local/bin/php /var/www/bin/console app:process-orders >> /var/log/cron.log 2>&1

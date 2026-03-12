@@ -1,0 +1,150 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Admin - Orders{% endblock %}
+
+{% block body %}
+
+    <div class="container mt-5">
+        <h1 class="mb-4">🍕 Orders panel</h1>
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white">
+                Current Orders
+            </div>
+            {# Live Stats #}
+            <div class="row mb-3">
+                <div class="col">
+                    <div class="card bg-warning text-dark text-center">
+                        <div class="card-body">
+                            Orders in queue: <strong id="queue-count-admin">{{ queue|default(0) }}</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card bg-success text-white text-center">
+                        <div class="card-body">
+                            Delivered today: <strong id="delivered-count">{{ delivered|default(0) }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# Spinner podczas ładowania #}
+            <div id="spinner" class="text-center my-4" style="display:none;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+
+            {# Tabela zamówień #}
+            <div class="card-body p-0">
+                <table class="table table-striped table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Pizza</th>
+                            <th>Quantity</th>
+                            <th>Email</th>
+                            <th>Address</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-body">
+                    {% for order in orders %}
+                        <tr>
+                            <td>{{ order.id }}</td>
+                            <td>
+                                <span class="fw-bold">
+                                    {{ order.pizzaType }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">
+                                    {{ order.quantity }}
+                                </span>
+                            </td>
+                            <td>{{ order.email }}</td>
+                            <td>{{ order.address }}</td>
+                            <td>
+                                {% if order.status.value == 'pending' %}
+                                    <span class="badge bg-warning text-dark">
+                                        Pending
+                                    </span>
+                                {% elseif order.status.value == 'delivered' %}
+                                    <span class="badge bg-success">
+                                        Delivered
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ order.createdAt|date('Y-m-d H:i') }}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center p-4">
+                                No orders yet 🍕
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+<script>
+
+    function getStatusBadgeClass(status) {
+        const classes = {
+            pending: 'warning text-dark',
+            delivered: 'success',
+        };
+        return classes[status] || 'secondary';
+    }
+
+    function refreshOrders() {
+        const table = document.getElementById('orders-body');
+        document.getElementById('spinner').style.display = 'block';
+
+        fetch('/admin/orders/data', {method: 'POST',})
+            .then(response => response.json())
+            .then(data => {
+                let statusBadgeClass = '';
+                table.innerHTML = '';
+                data.forEach(order => {
+                    table.innerHTML += `
+                        <tr>
+                            <td>${order.id}</td>
+                            <td><span class="fw-bold">${order.pizza}</span></td>
+                            <td><span class="badge bg-secondary">${order.quantity}</span></td>
+                            <td>${order.email}</td>
+                            <td>${order.address}</td>
+                            <td><span class="badge bg-${getStatusBadgeClass(order.status)}">${order.status}</span></td>
+                            <td>${order.created}</td>
+                        </tr>
+                    `;
+                });
+                document.getElementById('spinner').style.display = 'none';
+            });
+    }
+
+    function refreshStatsAdmin() {
+        fetch('/admin/orders/stats', {method: 'POST',})
+            .then(resp => resp.json())
+            .then(data => {
+                document.getElementById('queue-count-admin').innerText = data.queue;
+                document.getElementById('delivered-count').innerText = data.deliveredToday;
+            });
+    }
+
+    setInterval(() => {
+        refreshOrders();
+        refreshStatsAdmin();
+    }, 5000);
+
+    refreshOrders();
+    refreshStatsAdmin();
+
+</script>
+{% endblock %}

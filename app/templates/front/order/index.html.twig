@@ -1,0 +1,67 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}PizzaFlow{% endblock %}
+
+{% block body %}
+
+    <div class="container mt-5">
+
+        <h1 class="mb-4">PizzaFlow 🍕</h1>
+
+        <div class="alert alert-info mt-4">
+            Orders in queue:
+            <strong id="queue-count">{{ queueCount }}</strong>
+            <br>
+            Estimated delivery time:
+            <strong id="delivery-time">{{ deliveryTime }}</strong> minutes
+        </div>
+
+        <div class="card p-4">
+            {{ form_start(form) }}
+
+            <div class="mb-3">
+                {{ form_label(form.pizzaType) }}
+                {{ form_widget(form.pizzaType, {'attr':{'class':'form-select'}}) }}
+            </div>
+
+            <div class="mb-3">
+                {{ form_label(form.quantity) }}
+                {{ form_widget(form.quantity, {'attr':{'class':'form-control'}}) }}
+            </div>
+
+            <div class="mb-3">
+                {{ form_label(form.email) }}
+                {{ form_widget(form.email, {'attr':{'class':'form-control'}}) }}
+            </div>
+
+            <div class="mb-3">
+                {{ form_label(form.address) }}
+                {{ form_widget(form.address, {'attr':{'class':'form-control'}}) }}
+            </div>
+
+            <button class="btn btn-primary">
+                Zamów pizzę
+            </button>
+
+            {{ form_end(form) }}
+        </div>
+    </div>
+<script>
+
+    function refreshStats() {
+
+        fetch('/orders/stats', {method: 'POST'})
+            .then(response => response.json())
+            .then(data => {
+
+                document.getElementById('queue-count').innerText = data.queue;
+                document.getElementById('delivery-time').innerText = data.estimatedTime;
+
+            });
+
+    }
+
+    setInterval(refreshStats, 5000);
+
+</script>
+{% endblock %}
